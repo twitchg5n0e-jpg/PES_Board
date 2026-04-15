@@ -12,44 +12,48 @@ void goToStoragePosition(int pos)
 {
     if (pos == 1) {
         g_servo_drehkranz.setSteeringAngle(gripper_cfg::LAGER_POS_1_D);
+        g_servo_lenkung.setSteeringAngle(gripper_cfg::LAGER_POS_1_L);
     } else if (pos == 2) {
         g_servo_drehkranz.setSteeringAngle(gripper_cfg::LAGER_POS_2_D);
+        g_servo_lenkung.setSteeringAngle(gripper_cfg::LAGER_POS_2_L);
     } else if (pos == 3) {
         g_servo_drehkranz.setSteeringAngle(gripper_cfg::LAGER_POS_3_D);
+        g_servo_lenkung.setSteeringAngle(gripper_cfg::LAGER_POS_3_L);
     } else if (pos == 4) {
         g_servo_drehkranz.setSteeringAngle(gripper_cfg::LAGER_POS_4_D);
+        g_servo_lenkung.setSteeringAngle(gripper_cfg::LAGER_POS_4_L);
     }
-    g_servo_lenkung.setSteeringAngle(gripper_cfg::LAGER_LENKUNG);
+    
 }
 
-void pickOrDropHouse(float angle)
+void pickOrDropHouse(float angle_D,float angle_L, float seil_Umdrehungen)
 {
-    g_servo_drehkranz.setSteeringAngle(angle);
-    g_servo_lenkung.setSteeringAngle(gripper_cfg::AUFNEHMEN_ABLEGEN_LENKUNG);
-    g_motor_arm.setAndWait(gripper_cfg::SEIL_HERUNTER_ROTATIONEN_HAUS);
-    g_motor_arm.setAndWait(gripper_cfg::SEIL_HOCH_ROTATIONEN_HAUS);
+    g_servo_drehkranz.setSteeringAngle(angle_D);
+    g_servo_lenkung.setSteeringAngle(angle_L);
+    g_motor_arm.setAndWait(seil_Umdrehungen);
+    g_motor_arm.setAndWait(seil_Umdrehungen*-1);
 }
 
-void pickOrDropStorage(int pos)
+void pickOrDropStorage(int pos ,float seil_Umdrehungen)
 {
     goToStoragePosition(pos);
-    g_motor_arm.setAndWait(gripper_cfg::SEIL_HERUNTER_ROTATIONEN_LAGER);
-    g_motor_arm.setAndWait(gripper_cfg::SEIL_HOCH_ROTATIONEN_LAGER);
+    g_motor_arm.setAndWait(seil_Umdrehungen);
+    g_motor_arm.setAndWait(seil_Umdrehungen*-1);
 }
 
 void storeColorInFirstFreeSlot(int farbe)
 {
     if (lagern::g_lager_pos_1 == K_LAGER_LEER) {
-        pickOrDropStorage(1);
+        pickOrDropStorage(1,gripper_cfg::SEIL_ROTATIONEN_LAGER_POS_1);
         lagern::g_lager_pos_1 = farbe;
     } else if (lagern::g_lager_pos_2 == K_LAGER_LEER) {
-        pickOrDropStorage(2);
+        pickOrDropStorage(2,gripper_cfg::SEIL_ROTATIONEN_LAGER_POS_2);
         lagern::g_lager_pos_2 = farbe;
     } else if (lagern::g_lager_pos_3 == K_LAGER_LEER) {
-        pickOrDropStorage(3);
+        pickOrDropStorage(3,gripper_cfg::SEIL_ROTATIONEN_LAGER_POS_3);
         lagern::g_lager_pos_3 = farbe;
     } else if (lagern::g_lager_pos_4 == K_LAGER_LEER) {
-        pickOrDropStorage(4);
+        pickOrDropStorage(4,gripper_cfg::SEIL_ROTATIONEN_LAGER_POS_4);
         lagern::g_lager_pos_4 = farbe;
     }
 }
@@ -57,20 +61,25 @@ void storeColorInFirstFreeSlot(int farbe)
 void unloadColorFromSlotIfPresent(int farbe)
 {
     if (lagern::g_lager_pos_1 == farbe) {
-        pickOrDropStorage(1);
+        pickOrDropStorage(1,gripper_cfg::SEIL_ROTATIONEN_LAGER_POS_1);
         lagern::g_lager_pos_1 = K_LAGER_LEER;
     } else if (lagern::g_lager_pos_2 == farbe) {
-        pickOrDropStorage(2);
+        pickOrDropStorage(2,gripper_cfg::SEIL_ROTATIONEN_LAGER_POS_2);
         lagern::g_lager_pos_2 = K_LAGER_LEER;
     } else if (lagern::g_lager_pos_3 == farbe) {
-        pickOrDropStorage(3);
+        pickOrDropStorage(3,gripper_cfg::SEIL_ROTATIONEN_LAGER_POS_3);
         lagern::g_lager_pos_3 = K_LAGER_LEER;
     } else if (lagern::g_lager_pos_4 == farbe) {
-        pickOrDropStorage(4);
+        pickOrDropStorage(4,gripper_cfg::SEIL_ROTATIONEN_LAGER_POS_4);
         lagern::g_lager_pos_4 = K_LAGER_LEER;
     }
 }
 } // namespace
+
+namespace gripper_cfg
+{
+bool lager = false;
+} // namespace gripper_cfg
 
 namespace lagern
 {
@@ -90,7 +99,7 @@ AufnehmenModule::AufnehmenModule()
 
 void AufnehmenModule::aufnehmenRot()
 {
-    pickOrDropHouse(gripper_cfg::AUFNEHMEN_ABLEGEN_POS_ROT_GELB_D);
+    pickOrDropHouse(gripper_cfg::AUFNEHMEN_ABLEGEN_POS_ROT_GELB_D,gripper_cfg::AUFNEHMEN_ABLEGEN_POS_BLAU_GRUEN_L,gripper_cfg::SEIL_ROTATIONEN_HAUS_ROT_GELB);
     if (gripper_cfg::lager) {
         storeColorInFirstFreeSlot(K_FARBE_ROT);
     }
@@ -98,15 +107,15 @@ void AufnehmenModule::aufnehmenRot()
 
 void AufnehmenModule::aufnehmenBlau()
 {
-    pickOrDropHouse(gripper_cfg::AUFNEHMEN_ABLEGEN_POS_BLAU_GRUEN_D);
-    if (gripper_cfg::lager) {
-        storeColorInFirstFreeSlot(K_FARBE_BLAU);
+    pickOrDropHouse(gripper_cfg::AUFNEHMEN_ABLEGEN_POS_BLAU_GRUEN_D,gripper_cfg::AUFNEHMEN_ABLEGEN_POS_BLAU_GRUEN_L,gripper_cfg::SEIL_ROTATIONEN_HAUS_BLAU_GRUEN);
+    if (gripper_cfg::lager) {    
+    storeColorInFirstFreeSlot(K_FARBE_BLAU);
     }
 }
 
 void AufnehmenModule::aufnehmenGelb()
 {
-    pickOrDropHouse(gripper_cfg::AUFNEHMEN_ABLEGEN_POS_ROT_GELB_D);
+    pickOrDropHouse(gripper_cfg::AUFNEHMEN_ABLEGEN_POS_ROT_GELB_D,gripper_cfg::AUFNEHMEN_ABLEGEN_POS_ROT_GELB_L,gripper_cfg::SEIL_ROTATIONEN_HAUS_ROT_GELB);
     if (gripper_cfg::lager) {
         storeColorInFirstFreeSlot(K_FARBE_GELB);
     }
@@ -114,7 +123,7 @@ void AufnehmenModule::aufnehmenGelb()
 
 void AufnehmenModule::aufnehmenGruen()
 {
-    pickOrDropHouse(gripper_cfg::AUFNEHMEN_ABLEGEN_POS_BLAU_GRUEN_D);
+    pickOrDropHouse(gripper_cfg::AUFNEHMEN_ABLEGEN_POS_BLAU_GRUEN_D,gripper_cfg::AUFNEHMEN_ABLEGEN_POS_BLAU_GRUEN_L,gripper_cfg::SEIL_ROTATIONEN_HAUS_BLAU_GRUEN);
     if (gripper_cfg::lager) {
         storeColorInFirstFreeSlot(K_FARBE_GRUEN);
     }
@@ -134,7 +143,7 @@ void AbladenModule::abladenRot()
     if (gripper_cfg::lager) {
         unloadColorFromSlotIfPresent(K_FARBE_ROT);
     }
-    pickOrDropHouse(gripper_cfg::AUFNEHMEN_ABLEGEN_POS_ROT_GELB_D);
+    pickOrDropHouse(gripper_cfg::AUFNEHMEN_ABLEGEN_POS_ROT_GELB_D, gripper_cfg::AUFNEHMEN_ABLEGEN_POS_ROT_GELB_L, gripper_cfg::SEIL_ROTATIONEN_HAUS_ROT_GELB);
 }
 
 void AbladenModule::abladenBlau()
@@ -142,7 +151,7 @@ void AbladenModule::abladenBlau()
     if (gripper_cfg::lager) {
         unloadColorFromSlotIfPresent(K_FARBE_BLAU);
     }
-    pickOrDropHouse(gripper_cfg::AUFNEHMEN_ABLEGEN_POS_BLAU_GRUEN_D);
+    pickOrDropHouse(gripper_cfg::AUFNEHMEN_ABLEGEN_POS_BLAU_GRUEN_D, gripper_cfg::AUFNEHMEN_ABLEGEN_POS_BLAU_GRUEN_L, gripper_cfg::SEIL_ROTATIONEN_HAUS_BLAU_GRUEN);
 }
 
 void AbladenModule::abladenGelb()
@@ -150,7 +159,7 @@ void AbladenModule::abladenGelb()
     if (gripper_cfg::lager) {
         unloadColorFromSlotIfPresent(K_FARBE_GELB);
     }
-    pickOrDropHouse(gripper_cfg::AUFNEHMEN_ABLEGEN_POS_ROT_GELB_D);
+    pickOrDropHouse(gripper_cfg::AUFNEHMEN_ABLEGEN_POS_ROT_GELB_D, gripper_cfg::AUFNEHMEN_ABLEGEN_POS_ROT_GELB_L, gripper_cfg::SEIL_ROTATIONEN_HAUS_ROT_GELB);
 }
 
 void AbladenModule::abladenGruen()
@@ -158,6 +167,6 @@ void AbladenModule::abladenGruen()
     if (gripper_cfg::lager) {
         unloadColorFromSlotIfPresent(K_FARBE_GRUEN);
     }
-    pickOrDropHouse(gripper_cfg::AUFNEHMEN_ABLEGEN_POS_BLAU_GRUEN_D);
+    pickOrDropHouse(gripper_cfg::AUFNEHMEN_ABLEGEN_POS_BLAU_GRUEN_D, gripper_cfg::AUFNEHMEN_ABLEGEN_POS_BLAU_GRUEN_L, gripper_cfg::SEIL_ROTATIONEN_HAUS_BLAU_GRUEN);
 }
 } // namespace abladen
